@@ -36,7 +36,7 @@ export async function savePackage(_prev: FormState, form: FormData): Promise<For
   if (id) await db.promotionPackage.update({ where: { id }, data });
   else await db.promotionPackage.create({ data });
   revalidatePath("/admin/promotions");
-  return null;
+  return {};
 }
 
 export async function deletePackage(form: FormData) {
@@ -47,10 +47,9 @@ export async function deletePackage(form: FormData) {
 
 // ── Request workflow: pending → approved → active → completed (or rejected) ─
 
-export async function reviewRequest(form: FormData) {
+export async function reviewRequest(decision: "approved" | "rejected", form: FormData) {
   await requireAdmin();
   const id = str(form, "id");
-  const decision = str(form, "decision");
   if (decision !== "approved" && decision !== "rejected") return;
   await db.promotionRequest.update({
     where: { id },

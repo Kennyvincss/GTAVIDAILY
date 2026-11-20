@@ -68,10 +68,10 @@ export default async function NewsletterAdmin() {
                       ) : null}
                     </td>
                     <td>
-                      <form action={setSponsorshipStatus} className="flex gap-1">
+                      <form className="flex gap-1">
                         <input type="hidden" name="id" value={s.id} />
-                        {s.status !== "sent" && <button name="status" value="sent" className="btn btn-sm btn-ghost">Mark sent</button>}
-                        {s.status === "scheduled" && <button name="status" value="cancelled" className="btn btn-sm btn-danger">Cancel</button>}
+                        {s.status !== "sent" && <button formAction={setSponsorshipStatus.bind(null, "sent")} className="btn btn-sm btn-ghost">Mark sent</button>}
+                        {s.status === "scheduled" && <button formAction={setSponsorshipStatus.bind(null, "cancelled")} className="btn btn-sm btn-danger">Cancel</button>}
                       </form>
                     </td>
                   </tr>

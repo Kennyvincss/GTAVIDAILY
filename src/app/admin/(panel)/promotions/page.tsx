@@ -10,7 +10,7 @@ type Pkg = { id: string; name: string; description: string; priceCents: number; 
 
 function PackageForm({ p }: { p?: Pkg }) {
   return (
-    <FormShell action={savePackage} submitLabel={p ? "Save" : "Add package"} className="grid items-end gap-3 md:grid-cols-[1.3fr_0.7fr_0.6fr_0.6fr_0.5fr]">
+    <FormShell action={savePackage} submitLabel={p ? "Save" : "Add package"} resetOnSuccess={!p} className="grid items-end gap-3 md:grid-cols-[1.3fr_0.7fr_0.6fr_0.6fr_0.5fr]">
       <input type="hidden" name="id" value={p?.id ?? ""} />
       <Field label="Package name" name="name" defaultValue={p?.name} required />
       <Field label="Price" name="price" defaultValue={centsToInput(p?.priceCents)} placeholder="49.00" required />
@@ -101,11 +101,11 @@ export default async function PromotionsAdmin({ searchParams }: { searchParams: 
                 )}
 
                 {r.status === "pending" && (
-                  <form action={reviewRequest} className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <form className="mt-3 flex flex-col gap-2 sm:flex-row">
                     <input type="hidden" name="id" value={r.id} />
                     <input className="input" name="adminNotes" placeholder="Internal notes (optional)" defaultValue={r.adminNotes} />
-                    <button name="decision" value="approved" className="btn btn-sm">Approve</button>
-                    <button name="decision" value="rejected" className="btn btn-sm btn-danger">Reject</button>
+                    <button formAction={reviewRequest.bind(null, "approved")} className="btn btn-sm">Approve</button>
+                    <button formAction={reviewRequest.bind(null, "rejected")} className="btn btn-sm btn-danger">Reject</button>
                   </form>
                 )}
                 {(r.status === "approved" || r.status === "pending") && (

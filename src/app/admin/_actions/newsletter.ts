@@ -39,9 +39,8 @@ export async function saveSponsorship(_prev: FormState, form: FormData): Promise
   redirect("/admin/newsletter");
 }
 
-export async function setSponsorshipStatus(form: FormData) {
+export async function setSponsorshipStatus(status: "scheduled" | "sent" | "cancelled", form: FormData) {
   await requireAdmin();
-  const status = str(form, "status");
   if (!["scheduled", "sent", "cancelled"].includes(status)) return;
   await db.newsletterSponsorship.update({ where: { id: str(form, "id") }, data: { status } });
   revalidatePath("/admin/newsletter");

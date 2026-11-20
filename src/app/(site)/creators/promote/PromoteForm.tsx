@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { requestPromotion, type PromotionState } from "@/app/actions/promotion";
 
 type Pkg = { id: string; name: string; description: string; durationDays: number; price: string };
@@ -11,7 +11,14 @@ export function PromoteForm({ packages }: { packages: Pkg[] }) {
   if (state?.ok) return <div className="card p-6 text-ok">{state.message}</div>;
 
   return (
-    <form action={action} className="space-y-6">
+    <form
+      className="space-y-6"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        startTransition(() => action(data));
+      }}
+    >
       <fieldset>
         <legend className="mb-3 font-bold">1. Choose a package</legend>
         <div className="grid gap-3 sm:grid-cols-2">

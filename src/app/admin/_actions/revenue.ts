@@ -25,7 +25,7 @@ export async function addRevenue(_prev: FormState, form: FormData): Promise<Form
     },
   });
   revalidatePath("/admin/revenue");
-  return null;
+  return {};
 }
 
 export async function deleteRevenue(form: FormData) {

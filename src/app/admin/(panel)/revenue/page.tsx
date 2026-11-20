@@ -33,7 +33,7 @@ export default async function RevenueAdmin() {
       </div>
 
       <Section title="Record a payment" sub="E.g. a monthly AdSense payout, an affiliate network payment or a paid sponsored-article invoice.">
-        <FormShell action={addRevenue} submitLabel="Add entry" className="grid items-end gap-3 md:grid-cols-[1fr_0.6fr_0.5fr_0.7fr]">
+        <FormShell action={addRevenue} submitLabel="Add entry" resetOnSuccess className="grid items-end gap-3 md:grid-cols-[1fr_0.6fr_0.5fr_0.7fr]">
           <div>
             <label className="label" htmlFor="streamKey">Stream</label>
             <select className="select" id="streamKey" name="streamKey" required>

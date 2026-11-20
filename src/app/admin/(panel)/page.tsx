@@ -12,7 +12,7 @@ const RANGES = [7, 30, 90] as const;
 const shortDay = (k: string) =>
   new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${k}T00:00:00Z`));
 const shortMonth = (k: string) =>
-  new Intl.DateTimeFormat("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" }).format(new Date(`${k}-01T00:00:00Z`));
+  new Intl.DateTimeFormat("en-GB", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${k}-01T00:00:00Z`));
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
   const requested = Number((await searchParams).days);
