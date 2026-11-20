@@ -2,14 +2,15 @@
 
 Daily Grand Theft Auto VI news, videos, creators and gear, built as a media business with these revenue streams: advertising, sponsored content, creator promotion, affiliate marketing and newsletter sponsorship. All analytics are first-party and measured from real visitors. The app contains no simulated figures.
 
-**Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Prisma (SQLite locally, Postgres-ready) · Tailwind CSS 4
+**Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Prisma + PostgreSQL · Tailwind CSS 4
 
 ## Getting started
 
 ```bash
 cp .env.example .env          # then set ADMIN_PASSWORD and ADMIN_SESSION_SECRET
+docker compose up -d          # local PostgreSQL matching the URLs in .env.example
 npm install
-npm run db:push               # create the database
+npm run db:deploy             # apply migrations
 npm run db:seed               # categories, ad placements, one starter article (no analytics data)
 npm run dev
 ```
@@ -42,6 +43,29 @@ The first-party tracker (`src/components/Tracker.tsx` → `POST /api/track`) rec
 
 Bots, signed-in admins and visitors sending Do Not Track or Global Privacy Control are not recorded. IP addresses are not stored. Every panel shows an empty state until real data exists.
 
+## Deploying to Vercel
+
+1. **Create a Postgres database.** Neon, Supabase and Vercel Postgres (Storage tab in your Vercel project) all work and have free tiers. Copy two connection strings:
+   - the **pooled** URL, for `DATABASE_URL`
+   - the **direct** (non-pooled) URL, for `DIRECT_URL`. If your provider only gives one URL, use it for both.
+2. **Import the repo.** Go to vercel.com → Add New → Project → pick `GTAVIDAILY`. The framework is detected as Next.js. Leave the build settings as they are: Vercel runs the `vercel-build` script automatically.
+3. **Set environment variables** (Project → Settings → Environment Variables):
+
+   | Name | Value |
+   | --- | --- |
+   | `DATABASE_URL` | pooled Postgres URL |
+   | `DIRECT_URL` | direct Postgres URL |
+   | `ADMIN_PASSWORD` | a strong password for `/admin` |
+   | `ADMIN_SESSION_SECRET` | a long random string, e.g. the output of `openssl rand -hex 32` |
+   | `NEXT_PUBLIC_SITE_URL` | your site URL, e.g. `https://gtavidaily.vercel.app` (update it if you add a domain) |
+   | `NEXT_PUBLIC_ADSENSE_CLIENT` | leave empty until AdSense approves you |
+
+4. **Deploy.** Each build applies database migrations and makes sure the categories and ad placements exist. No sample content is created in production.
+5. **Go to `/admin`,** sign in, and publish your first article. Then set your creator promotion prices in **Creator promotion**.
+6. **Optional: custom domain.** Project → Settings → Domains. Afterwards, update `NEXT_PUBLIC_SITE_URL` and redeploy.
+
+Other hosts (Railway, Render, Fly.io, a VPS) work the same way: set the variables, then run `npm run db:deploy && npx tsx prisma/seed.ts --structure-only && npm run build && npm start`.
+
 ## Google AdSense
 
 1. Set `NEXT_PUBLIC_ADSENSE_CLIENT=ca-pub-…` and redeploy. This adds the AdSense script, the `google-adsense-account` meta tag and `/ads.txt`.
@@ -60,7 +84,7 @@ To add, say, memberships: create the tables and pages, add a `{ key: "membership
 
 ## Production notes
 
-- **Database:** change `provider` in `prisma/schema.prisma` to `postgresql`, set `DATABASE_URL`, and run `npm run db:push` (or adopt `prisma migrate`). The raw distinct-count query is portable.
+- **Database changes:** edit `prisma/schema.prisma`, then run `npm run db:migrate -- --name <change>` locally and commit the new folder in `prisma/migrations`. Deploys apply it automatically.
 - **Admin:** one shared password (`ADMIN_PASSWORD`) and an HMAC-signed, httpOnly session cookie (`ADMIN_SESSION_SECRET`, 16+ chars). Article Markdown is rendered without sanitising, so give admin access only to trusted editors.
 - **Times** in the admin forms and analytics are UTC.
 - This is an independent fan site. It is not affiliated with Rockstar Games or Take-Two Interactive.

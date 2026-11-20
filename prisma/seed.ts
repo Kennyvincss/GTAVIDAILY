@@ -1,7 +1,10 @@
 /**
- * Seeds structure only: categories, ad placements and one starter article so
- * the site renders. It deliberately creates NO analytics, revenue or traffic
+ * Seeds structure: categories, ad placements and (locally) one starter article
+ * so the site renders. It deliberately creates NO analytics, revenue or traffic
  * data — every number on the dashboard comes from real visitors.
+ *
+ * `--structure-only` (used by the Vercel build) skips the starter article and
+ * is safe to run on every deploy: existing rows are never modified.
  */
 import { PrismaClient } from "@prisma/client";
 
@@ -30,7 +33,8 @@ async function main() {
   for (const [key, name, description, adsenseFormat] of PLACEMENTS) {
     await db.adPlacement.upsert({ where: { key }, update: {}, create: { key, name, description, adsenseFormat } });
   }
-  if ((await db.article.count()) === 0) {
+  const structureOnly = process.argv.includes("--structure-only");
+  if (!structureOnly && (await db.article.count()) === 0) {
     const news = await db.category.findUnique({ where: { slug: "news" } });
     await db.article.create({
       data: {
@@ -50,7 +54,7 @@ async function main() {
       },
     });
   }
-  console.log("Seeded categories, ad placements and starter content.");
+  console.log(structureOnly ? "Seeded categories and ad placements." : "Seeded categories, ad placements and starter content.");
 }
 
 main().finally(() => db.$disconnect());

@@ -1,5 +1,5 @@
 // GTA VI Daily data model.
-// SQLite for local development; switch `provider` to "postgresql" for production.
+// PostgreSQL everywhere (local dev via docker-compose.yml, production on any hosted Postgres).
 // All analytics tables are populated only by real visitor activity (see src/app/api/track).
 
 generator client {
@@ -7,8 +7,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  /// Pooled connection used by the app at runtime.
+  url       = env("DATABASE_URL")
+  /// Direct (non-pooled) connection used for migrations. Same as DATABASE_URL if your host has no pooler.
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── Editorial content ──────────────────────────────────────────────────────
