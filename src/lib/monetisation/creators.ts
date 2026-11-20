@@ -14,3 +14,11 @@ export function getFeaturedCreators(limit = 6) {
 export const CREATOR_PLATFORMS = ["youtube", "twitch", "tiktok", "kick", "other"] as const;
 
 export const REQUEST_STATUSES = ["pending", "approved", "active", "completed", "rejected"] as const;
+
+/** Close out promotions whose paid period has ended (run when admin pages load). */
+export async function completeExpiredPromotions() {
+  await db.promotionRequest.updateMany({
+    where: { status: "active", endsAt: { lt: new Date() } },
+    data: { status: "completed" },
+  });
+}
