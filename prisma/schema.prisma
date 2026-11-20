@@ -1,0 +1,311 @@
+// GTA VI Daily data model.
+// SQLite for local development; switch `provider` to "postgresql" for production.
+// All analytics tables are populated only by real visitor activity (see src/app/api/track).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Editorial content ──────────────────────────────────────────────────────
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  articles  Article[]
+  videos    Video[]
+}
+
+model Article {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String
+  body        String // Markdown
+  coverImage  String?
+  status      String    @default("draft") // draft | published
+  featured    Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // Sponsored content
+  isSponsored       Boolean @default(false)
+  sponsorName       String?
+  sponsorUrl        String?
+  sponsorDisclosure String?
+
+  @@index([status, publishedAt])
+}
+
+model Video {
+  id          String    @id @default(cuid())
+  title       String
+  youtubeId   String
+  description String    @default("")
+  featured    Boolean   @default(false)
+  status      String    @default("published") // draft | published
+  publishedAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  isSponsored       Boolean @default(false)
+  sponsorName       String?
+  sponsorUrl        String?
+  sponsorDisclosure String?
+
+  events VideoEvent[]
+}
+
+// ─── Advertising ────────────────────────────────────────────────────────────
+
+/// A fixed location on the site where an ad can render.
+/// Keys are defined in src/lib/monetisation/placements.ts.
+model AdPlacement {
+  key           String       @id
+  name          String
+  description   String       @default("")
+  enabled       Boolean      @default(true)
+  /// "auto": direct campaign if one is live, otherwise AdSense (if configured)
+  /// "direct": direct campaigns only, "adsense": AdSense only
+  mode          String       @default("auto")
+  adsenseSlotId String?
+  adsenseFormat String       @default("auto")
+  campaigns     AdCampaign[]
+}
+
+/// Directly sold advertisement (house / sponsor creative).
+model AdCampaign {
+  id           String      @id @default(cuid())
+  placementKey String
+  placement    AdPlacement @relation(fields: [placementKey], references: [key], onDelete: Cascade)
+  advertiser   String
+  title        String
+  body         String?
+  imageUrl     String?
+  targetUrl    String
+  startsAt     DateTime    @default(now())
+  endsAt       DateTime?
+  active       Boolean     @default(true)
+  weight       Int         @default(1)
+  createdAt    DateTime    @default(now())
+  events       AdEvent[]
+}
+
+model AdEvent {
+  id           String      @id @default(cuid())
+  placementKey String
+  campaignId   String?
+  campaign     AdCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  /// impression | click | adsense_view
+  type         String
+  day          String // YYYY-MM-DD (UTC)
+  createdAt    DateTime    @default(now())
+
+  @@index([day, placementKey, type])
+  @@index([campaignId, type])
+}
+
+// ─── Creator promotion ──────────────────────────────────────────────────────
+
+model Creator {
+  id            String             @id @default(cuid())
+  name          String
+  slug          String             @unique
+  platform      String // youtube | twitch | tiktok | kick | other
+  channelUrl    String
+  avatarUrl     String?
+  bio           String             @default("")
+  featured      Boolean            @default(false)
+  featuredUntil DateTime?
+  createdAt     DateTime           @default(now())
+  requests      PromotionRequest[]
+}
+
+/// Admin-managed price list for creator promotion.
+model PromotionPackage {
+  id           String             @id @default(cuid())
+  name         String
+  description  String             @default("")
+  durationDays Int
+  priceCents   Int
+  currency     String             @default("GBP")
+  active       Boolean            @default(true)
+  sortOrder    Int                @default(0)
+  createdAt    DateTime           @default(now())
+  requests     PromotionRequest[]
+}
+
+model PromotionRequest {
+  id           String            @id @default(cuid())
+  packageId    String?
+  package      PromotionPackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  /// Price snapshot at the time of the request
+  priceCents   Int
+  currency     String
+  durationDays Int
+  creatorName  String
+  email        String
+  platform     String
+  channelUrl   String
+  avatarUrl    String?
+  bio          String            @default("")
+  message      String            @default("")
+  /// pending | approved (awaiting payment) | active | completed | rejected
+  status       String            @default("pending")
+  adminNotes   String            @default("")
+  creatorId    String?
+  creator      Creator?          @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  createdAt    DateTime          @default(now())
+  reviewedAt   DateTime?
+  startsAt     DateTime?
+  endsAt       DateTime?
+
+  @@index([status])
+}
+
+// ─── Affiliate marketing ────────────────────────────────────────────────────
+
+model AffiliateProduct {
+  id           String           @id @default(cuid())
+  name         String
+  slug         String           @unique
+  description  String           @default("")
+  imageUrl     String?
+  merchant     String
+  /// Full tracking URL. May contain {clickId} which is replaced per click.
+  affiliateUrl String
+  priceText    String?
+  category     String           @default("Gear")
+  active       Boolean          @default(true)
+  sortOrder    Int              @default(0)
+  createdAt    DateTime         @default(now())
+  clicks       AffiliateClick[]
+}
+
+model AffiliateClick {
+  id         String           @id @default(cuid())
+  productId  String
+  product    AffiliateProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sourcePath String?
+  visitorId  String?
+  day        String
+  createdAt  DateTime         @default(now())
+
+  @@index([day])
+  @@index([productId])
+}
+
+// ─── Newsletter ─────────────────────────────────────────────────────────────
+
+model NewsletterSubscriber {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  source           String    @default("site")
+  unsubscribeToken String    @unique
+  day              String
+  createdAt        DateTime  @default(now())
+  unsubscribedAt   DateTime?
+
+  @@index([day])
+}
+
+/// A sponsored block placed into a specific newsletter issue.
+model NewsletterSponsorship {
+  id         String   @id @default(cuid())
+  sponsor    String
+  headline   String
+  body       String
+  targetUrl  String
+  imageUrl   String?
+  issueDate  DateTime
+  /// top | middle | bottom
+  position   String   @default("top")
+  priceCents Int?
+  currency   String   @default("GBP")
+  /// scheduled | sent | cancelled
+  status     String   @default("scheduled")
+  createdAt  DateTime @default(now())
+}
+
+// ─── Revenue ledger (real, admin-recorded figures only) ─────────────────────
+
+model RevenueEntry {
+  id          String   @id @default(cuid())
+  /// Stream key from src/lib/monetisation/streams.ts
+  streamKey   String
+  amountCents Int
+  currency    String   @default("GBP")
+  description String   @default("")
+  /// Optional link to the record that produced the revenue
+  sourceType  String?
+  sourceId    String?
+  receivedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([streamKey, receivedAt])
+}
+
+// ─── First-party analytics ──────────────────────────────────────────────────
+
+model PageView {
+  id           String   @id @default(cuid())
+  path         String
+  day          String // YYYY-MM-DD (UTC)
+  visitorId    String
+  articleId    String?
+  videoId      String?
+  categoryId   String?
+  /// true for the first page of a visit (only these carry a traffic source)
+  isEntry      Boolean  @default(false)
+  /// direct | search | social | referral | newsletter | campaign | internal
+  source       String
+  referrerHost String?
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  createdAt    DateTime @default(now())
+
+  @@index([day])
+  @@index([articleId])
+  @@index([categoryId])
+}
+
+/// One row per visitor per day — enables portable distinct counts.
+model DailyVisitor {
+  day       String
+  visitorId String
+
+  @@id([day, visitorId])
+}
+
+/// One row per visitor per month (YYYY-MM).
+model MonthlyVisitor {
+  month     String
+  visitorId String
+
+  @@id([month, visitorId])
+}
+
+model VideoEvent {
+  id        String   @id @default(cuid())
+  videoId   String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  /// play | complete
+  type      String
+  visitorId String?
+  day       String
+  createdAt DateTime @default(now())
+
+  @@index([day, type])
+  @@index([videoId, type])
+}
