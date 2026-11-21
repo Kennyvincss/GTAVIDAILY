@@ -42,7 +42,7 @@ export async function saveArticle(_prev: FormState, form: FormData): Promise<For
       slug,
       excerpt: str(form, "excerpt", 400),
       body: str(form, "body", 200_000),
-      coverImage: coverRaw ? safeUrl(coverRaw) : null,
+      coverImage: coverRaw ? (coverRaw.startsWith("/") && !coverRaw.startsWith("//") ? coverRaw : safeUrl(coverRaw)) : null,
       categoryId: optStr(form, "categoryId"),
       status,
       publishedAt,

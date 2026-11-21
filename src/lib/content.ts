@@ -13,6 +13,7 @@ export const articleCardSelect = {
   excerpt: true,
   coverImage: true,
   publishedAt: true,
+  updatedAt: true,
   isSponsored: true,
   sponsorName: true,
   featured: true,

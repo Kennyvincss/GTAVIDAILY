@@ -11,6 +11,7 @@ import { articleWhere, getLatestArticles } from "@/lib/content";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { renderArticleChunks } from "@/lib/markdown";
+import { articleCover } from "@/lib/covers";
 
 async function load(slug: string) {
   return db.article.findFirst({ where: { slug, ...articleWhere() }, include: { category: true } });
@@ -22,7 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: a.isSponsored ? `${a.title} (Sponsored)` : a.title,
     description: a.excerpt,
-    openGraph: { title: a.title, description: a.excerpt, images: a.coverImage ? [a.coverImage] : [] },
+    openGraph: { title: a.title, description: a.excerpt, images: [articleCover(a, { share: true })] },
+    twitter: { card: "summary_large_image", title: a.title, description: a.excerpt, images: [articleCover(a, { share: true })] },
   };
 }
 
@@ -56,9 +58,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
         )}
 
-        {a.coverImage && (
-          <img src={a.coverImage} alt="" className="mt-6 aspect-[16/9] w-full rounded-2xl object-cover" />
-        )}
+        <img src={articleCover(a)} alt="" className="mt-6 aspect-[16/9] w-full rounded-2xl object-cover" />
 
         <div className="mt-8">
           {chunks.map((html, i) => (

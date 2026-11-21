@@ -84,7 +84,7 @@ export async function fetchClipInfo(link: string): Promise<ClipInfo> {
 }
 
 /** Turn a post's text into a clip title: drop links, hashtags at the end and extra spaces. */
-function titleFromPost(text: string): string | null {
+export function titleFromPost(text: string): string | null {
   const t = text
     .replace(/https?:\/\/\S+/g, "")
     .replace(/pic\.twitter\.com\/\S+/g, "")

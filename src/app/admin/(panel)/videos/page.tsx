@@ -25,13 +25,13 @@ export default async function VideosAdmin() {
         sub="Clips from YouTube, TikTok and Twitch, embedded on the site and credited to their creators."
         action={
           <div className="flex gap-2">
-            <Link href="/admin/youtube" className="btn btn-ghost">Import from YouTube</Link>
+            <Link href="/admin/auto-import" className="btn btn-ghost">Auto-import (YouTube &amp; X)</Link>
             <Link href="/admin/videos/new" className="btn btn-ghost">Add manually</Link>
           </div>
         }
       />
 
-      <Section title="Add a clip from a link" sub="The clip goes to Videos and whoever posted it is added to Creators (or matched to an existing creator) and credited on the clip.">
+      <Section title="Add a clip from a link" sub="Each clip goes to Videos and whoever posted it is added to Creators (or matched to an existing creator) and credited on the clip. Paste one link, or several — one per line.">
         <AddClipForm categories={categories} />
       </Section>
 

@@ -10,13 +10,13 @@ export function AddClipForm({ categories }: { categories: { id: string; name: st
   return (
     <FormShell action={addClip} submitLabel="Add clip" resetOnSuccess className="space-y-3">
       <div>
-        <label className="label" htmlFor="link">Clip link</label>
-        <input
-          className="input"
+        <label className="label" htmlFor="link">Clip link(s)</label>
+        <textarea
+          className="textarea min-h-[5.5rem] font-sans"
           id="link"
           name="link"
           required
-          placeholder="Paste a link to an X post with a video, or a YouTube, TikTok or Twitch clip"
+          placeholder={"Paste a link to an X post with a video, or a YouTube, TikTok or Twitch clip.\nAdding several? Paste one link per line (up to 25)."}
         />
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
@@ -32,7 +32,7 @@ export function AddClipForm({ categories }: { categories: { id: string; name: st
         </label>
       </div>
       <button type="button" onClick={() => setMore((m) => !m)} className="text-xs text-muted underline">
-        {more ? "Hide" : "Optional:"} custom title / creator
+        {more ? "Hide" : "Optional:"} custom title / creator (single link only)
       </button>
       <div className={more ? "grid gap-3 sm:grid-cols-3" : "hidden"}>
         <div>

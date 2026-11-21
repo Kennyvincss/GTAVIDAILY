@@ -4,6 +4,7 @@ import { fetchText } from "./fetch";
 import { matchesKeywords, parseFeed } from "./parse";
 import { findOrCreateCreator } from "@/lib/clip-info";
 import { channelFeedUrl } from "./youtube";
+import { runXSource, xConfigured } from "./x";
 
 export type RunResult = { source: string; added: number; error?: string };
 
@@ -102,13 +103,18 @@ export async function runFeedSource(id: string): Promise<RunResult> {
 export async function refreshStale(staleMinutes = 60): Promise<RunResult[]> {
   const cutoff = new Date(Date.now() - staleMinutes * 60_000);
   const stale = { active: true, OR: [{ lastFetchedAt: null }, { lastFetchedAt: { lt: cutoff } }] };
-  const [yt, feeds] = await Promise.all([
+  const [yt, feeds, xs] = await Promise.all([
     db.youTubeSource.findMany({ where: stale, select: { id: true } }),
     db.feedSource.findMany({ where: stale, select: { id: true } }),
+    xConfigured() ? db.xSource.findMany({ where: stale, select: { id: true } }) : Promise.resolve([]),
   ]);
   const results: RunResult[] = [];
   // Run a few at a time to stay well inside serverless time limits.
-  const jobs = [...yt.map((s) => () => runYouTubeSource(s.id)), ...feeds.map((s) => () => runFeedSource(s.id))];
+  const jobs = [
+    ...yt.map((s) => () => runYouTubeSource(s.id)),
+    ...feeds.map((s) => () => runFeedSource(s.id)),
+    ...xs.map((s) => () => runXSource(s.id)),
+  ];
   for (let i = 0; i < jobs.length; i += 4) {
     results.push(...(await Promise.all(jobs.slice(i, i + 4).map((j) => j()))));
   }

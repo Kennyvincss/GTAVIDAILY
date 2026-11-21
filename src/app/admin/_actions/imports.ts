@@ -9,6 +9,8 @@ import { fetchText } from "@/lib/importers/fetch";
 import { discoverFeedUrl, looksLikeFeed, parseFeed } from "@/lib/importers/parse";
 import { refreshStale, runFeedSource, runYouTubeSource } from "@/lib/importers/run";
 import { resolveChannelId } from "@/lib/importers/youtube";
+import { lookupXUser, parseXUsername, runXSource, xConfigured } from "@/lib/importers/x";
+import { findOrCreateCreator } from "@/lib/clip-info";
 import { bool, optStr, str } from "./form";
 import type { FormState } from "./content";
 
@@ -21,7 +23,11 @@ const summarise = (added: number, error?: string) =>
 export async function addYouTubeSource(_prev: FormState, form: FormData): Promise<FormState> {
   await requireAdmin();
   try {
-    const channelId = await resolveChannelId(str(form, "channel", 500));
+    const input = str(form, "channel", 500);
+    if (/^(https?:\/\/)?(www\.|mobile\.)?(x|twitter)\.com\//i.test(input)) {
+      return { error: "That's an X account. Add it in the “X accounts” section below." };
+    }
+    const channelId = await resolveChannelId(input);
     if (await db.youTubeSource.findUnique({ where: { channelId } })) return { error: "That channel is already connected." };
     const src = await db.youTubeSource.create({
       data: {
@@ -33,7 +39,7 @@ export async function addYouTubeSource(_prev: FormState, form: FormData): Promis
       },
     });
     const r = await runYouTubeSource(src.id);
-    revalidatePath("/admin/youtube");
+    revalidatePath("/admin/auto-import");
     return summarise(r.added, r.error);
   } catch (e) {
     return { error: err(e) };
@@ -51,20 +57,20 @@ export async function updateYouTubeSource(form: FormData) {
       categoryId: optStr(form, "categoryId"),
     },
   });
-  revalidatePath("/admin/youtube");
+  revalidatePath("/admin/auto-import");
 }
 
 export async function deleteYouTubeSource(form: FormData) {
   await requireAdmin();
   // Imported videos stay; they just lose the link to the source.
   await db.youTubeSource.delete({ where: { id: str(form, "id") } });
-  revalidatePath("/admin/youtube");
+  revalidatePath("/admin/auto-import");
 }
 
 export async function fetchYouTubeSource(form: FormData) {
   await requireAdmin();
   await runYouTubeSource(str(form, "id"));
-  revalidatePath("/admin/youtube");
+  revalidatePath("/admin/auto-import");
 }
 
 export async function publishVideo(form: FormData) {
@@ -77,7 +83,7 @@ export async function discardVideo(form: FormData) {
   await requireAdmin();
   const v = await db.video.findUnique({ where: { id: str(form, "id") } });
   if (v && v.status === "draft") await db.video.delete({ where: { id: v.id } });
-  revalidatePath("/admin/youtube");
+  revalidatePath("/admin/auto-import");
 }
 
 // ── News feeds ──────────────────────────────────────────────────────────────
@@ -175,4 +181,64 @@ export async function setItemStatus(status: "new" | "dismissed", form: FormData)
   await requireAdmin();
   await db.feedItem.update({ where: { id: str(form, "id") }, data: { status } });
   revalidatePath("/admin/inbox");
+}
+
+// ── X accounts ──────────────────────────────────────────────────────────────
+
+export async function addXSource(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  try {
+    if (!xConfigured()) return { error: "Connect X first: add X_BEARER_TOKEN to your Vercel environment variables and redeploy." };
+    const username = parseXUsername(str(form, "account", 300));
+    if (!username) return { error: "Paste an X profile link (e.g. https://x.com/RockstarGames) or an @username." };
+    const user = await lookupXUser(username);
+    if (await db.xSource.findUnique({ where: { username: user.username } })) {
+      return { error: `@${user.username} is already connected.` };
+    }
+    const avatar = user.profile_image_url?.replace("_normal.", "_400x400.") ?? null;
+    await findOrCreateCreator({ name: user.name, url: `https://x.com/${user.username}`, platform: "x", avatarUrl: avatar });
+    const src = await db.xSource.create({
+      data: {
+        username: user.username,
+        userId: user.id,
+        name: user.name,
+        keywords: str(form, "keywords", 300),
+        autoPublish: bool(form, "autoPublish"),
+        categoryId: optStr(form, "categoryId"),
+      },
+    });
+    const r = await runXSource(src.id);
+    revalidatePath("/admin/auto-import");
+    return r.error
+      ? { error: r.error }
+      : { notice: r.added ? `Connected @${user.username}: imported ${r.added} video post${r.added === 1 ? "" : "s"}.` : `Connected @${user.username}. No video posts to import right now; new ones will arrive automatically.` };
+  } catch (e) {
+    return { error: err(e) };
+  }
+}
+
+export async function updateXSource(form: FormData) {
+  await requireAdmin();
+  await db.xSource.update({
+    where: { id: str(form, "id") },
+    data: {
+      keywords: str(form, "keywords", 300),
+      autoPublish: bool(form, "autoPublish"),
+      active: bool(form, "active"),
+      categoryId: optStr(form, "categoryId"),
+    },
+  });
+  revalidatePath("/admin/auto-import");
+}
+
+export async function deleteXSource(form: FormData) {
+  await requireAdmin();
+  await db.xSource.delete({ where: { id: str(form, "id") } });
+  revalidatePath("/admin/auto-import");
+}
+
+export async function fetchXSource(form: FormData) {
+  await requireAdmin();
+  await runXSource(str(form, "id"));
+  revalidatePath("/admin/auto-import");
 }

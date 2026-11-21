@@ -32,7 +32,13 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
           <label className="label" htmlFor="excerpt">Excerpt</label>
           <input className="input" id="excerpt" name="excerpt" defaultValue={article?.excerpt ?? ""} maxLength={400} />
         </div>
-        <Field label="Cover image URL" name="coverImage" type="url" defaultValue={article?.coverImage} placeholder="https://" />
+        <Field
+          label="Cover image URL (optional)"
+          name="coverImage"
+          defaultValue={article?.coverImage}
+          placeholder="https://"
+          hint="Leave blank to use the automatic GTA VI Daily cover made from the headline and category."
+        />
         <div>
           <label className="label" htmlFor="body">Body (Markdown)</label>
           <textarea className="textarea min-h-[22rem]" id="body" name="body" defaultValue={article?.body ?? ""} />

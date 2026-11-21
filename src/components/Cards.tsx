@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/format";
 import { clipThumbnail, platformLabel } from "@/lib/clips";
+import { articleCover } from "@/lib/covers";
 import { ClipThumb } from "./ClipThumb";
 import { SponsoredBadge } from "./Sponsored";
 
@@ -11,6 +12,7 @@ export type ArticleCardData = {
   excerpt: string;
   coverImage: string | null;
   publishedAt: Date | null;
+  updatedAt?: Date | null;
   isSponsored: boolean;
   sponsorName: string | null;
   category: { name: string; slug: string } | null;
@@ -22,15 +24,12 @@ export function ArticleCard({ a, size = "md" }: { a: ArticleCardData; size?: "lg
       <Link href={`/news/${a.slug}`} className="block no-underline">
         {size !== "sm" && (
           <div className="mb-3 aspect-[16/9] overflow-hidden rounded-xl bg-surface-2">
-            {a.coverImage ? (
-              <img
-                src={a.coverImage}
-                alt=""
-                className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-              />
-            ) : (
-              <div className="h-full w-full bg-[linear-gradient(135deg,#ff3d8b33,#ffb54722,#2de2e622)]" />
-            )}
+            <img
+              src={articleCover(a)}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+            />
           </div>
         )}
         <div className="flex flex-wrap items-center gap-2">

@@ -77,6 +77,10 @@ model Video {
   importSourceId String?
   importSource   YouTubeSource? @relation(fields: [importSourceId], references: [id], onDelete: SetNull)
 
+  /// Set when the clip was pulled in by the X account importer
+  xSourceId String?
+  xSource   XSource? @relation(fields: [xSourceId], references: [id], onDelete: SetNull)
+
   /// The creator who made the clip (credited on the video page)
   creatorId String?
   creator   Creator? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
@@ -100,6 +104,26 @@ model YouTubeSource {
   autoPublish   Boolean   @default(false)
   categoryId    String?
   active        Boolean   @default(true)
+  lastFetchedAt DateTime?
+  lastError     String?
+  createdAt     DateTime  @default(now())
+  videos        Video[]
+}
+
+/// An X account whose new video posts are imported as clips (needs X_BEARER_TOKEN).
+model XSource {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  /// X's numeric user ID (looked up once)
+  userId        String
+  name          String
+  /// Comma-separated; a post is imported only if its text contains one. Empty = import all video posts.
+  keywords      String    @default("")
+  autoPublish   Boolean   @default(false)
+  categoryId    String?
+  active        Boolean   @default(true)
+  /// Newest post already seen, so each check only pays for new posts
+  lastSeenId    String?
   lastFetchedAt DateTime?
   lastError     String?
   createdAt     DateTime  @default(now())
