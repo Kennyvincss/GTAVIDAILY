@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
 import { site } from "@/lib/site";
 import { NewsletterForm } from "./NewsletterForm";
 
@@ -13,37 +12,29 @@ const NAV = [
 
 export function Logo() {
   return (
-    <Link href="/" className="font-[family-name:var(--font-display)] text-xl tracking-tight no-underline">
+    <Link href="/" className="whitespace-nowrap font-[family-name:var(--font-display)] text-xl tracking-tight no-underline">
       <span className="brand-gradient">GTA VI</span> <span>Daily</span>
     </Link>
   );
 }
 
-export async function SiteHeader() {
-  const categories = await db.category.findMany({ orderBy: { name: "asc" }, take: 8 });
+export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-night/85 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+      <div className="mx-auto flex max-w-6xl flex-col gap-1.5 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-3">
         <Logo />
-        <nav className="flex gap-1 overflow-x-auto text-sm font-semibold">
+        <nav className="-mx-2 flex justify-between overflow-x-auto text-sm font-semibold sm:mx-0 sm:justify-end sm:gap-1">
           {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className="rounded-full px-3 py-1.5 text-muted no-underline hover:bg-surface hover:text-ink">
+            <Link
+              key={n.href}
+              href={n.href}
+              className="whitespace-nowrap rounded-full px-1.5 py-1.5 text-[13px] text-muted no-underline hover:bg-surface hover:text-ink min-[380px]:px-2 min-[380px]:text-sm sm:px-3"
+            >
               {n.label}
             </Link>
           ))}
         </nav>
       </div>
-      {categories.length > 0 && (
-        <div className="border-t border-line/60">
-          <div className="mx-auto flex max-w-6xl gap-4 overflow-x-auto px-4 py-2 text-xs font-semibold text-muted">
-            {categories.map((c) => (
-              <Link key={c.id} href={`/category/${c.slug}`} className="whitespace-nowrap no-underline hover:text-pink">
-                {c.name}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </header>
   );
 }
