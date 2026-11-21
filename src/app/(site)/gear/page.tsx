@@ -6,6 +6,8 @@ export const metadata: Metadata = { title: "Gear for GTA VI" };
 
 export default async function GearPage() {
   const products = await getAffiliateProducts();
+  // Amazon Associates requires this exact disclosure wherever its links appear.
+  const hasAmazon = products.some((p) => /(^|\.)amazon\.[a-z.]+\//.test(p.affiliateUrl.replace(/^https?:\/\/(www\.)?/, "x.")));
   const groups = new Map<string, typeof products>();
   for (const p of products) groups.set(p.category, [...(groups.get(p.category) ?? []), p]);
   return (
@@ -15,6 +17,7 @@ export default async function GearPage() {
         <p className="mt-2 max-w-2xl text-sm text-muted">
           Consoles, controllers, headsets and more that we recommend. These are affiliate links: if you buy through
           them we may earn a commission, at no extra cost to you. It never affects what we recommend.
+          {hasAmazon && " As an Amazon Associate, GTA VI Daily earns from qualifying purchases."}
         </p>
       </header>
       {products.length === 0 && <p className="text-muted">No recommendations yet.</p>}

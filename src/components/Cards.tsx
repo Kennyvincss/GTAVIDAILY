@@ -150,6 +150,31 @@ export function CreatorCard({
   );
 }
 
+const GEAR_ICONS: Record<string, string> = {
+  "The game": "M4 6h16v12H4z M8 10h8 M8 14h5",
+  Consoles: "M7 3h4v18H7z M13 6h4v12h-4z",
+  Controllers: "M6 9h12a3 3 0 0 1 3 3l-1 5a2 2 0 0 1-3.5 1L15 16H9l-1.5 2A2 2 0 0 1 4 17l-1-5a3 3 0 0 1 3-3z M8 12v2 M7 13h2 M16 12h.01 M17.5 13.5h.01",
+  Headsets: "M4 15v-3a8 8 0 0 1 16 0v3 M4 15h3v5H4z M17 15h3v5h-3z",
+  Storage: "M3 8h18v8H3z M7 12h.01 M11 12h6",
+  Accessories: "M12 3v4 M12 17v4 M3 12h4 M17 12h4 M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z",
+};
+
+/** Placeholder art for products without a photo (Amazon doesn't allow copying its product images). */
+function GearArt({ name, category, compact }: { name: string; category: string; compact: boolean }) {
+  const icon = GEAR_ICONS[category] ?? GEAR_ICONS.Accessories;
+  return (
+    <div className="relative grid h-full w-full place-items-center bg-[radial-gradient(circle_at_70%_30%,#ffb54755,transparent_55%),linear-gradient(135deg,#3b0f3f,#140726)]">
+      <svg viewBox="0 0 24 24" className={compact ? "h-7 w-7" : "h-1/3 w-1/3"} fill="none" stroke="#ff7ab0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d={icon} />
+      </svg>
+      {!compact && (
+        <span className="absolute bottom-2 left-2 right-2 truncate text-center text-[0.65rem] font-bold uppercase tracking-widest text-ink/60">{category}</span>
+      )}
+      <span className="sr-only">{name}</span>
+    </div>
+  );
+}
+
 export type AffiliateCardData = {
   id: string;
   slug: string;
@@ -158,6 +183,7 @@ export type AffiliateCardData = {
   imageUrl: string | null;
   merchant: string;
   priceText: string | null;
+  category?: string;
 };
 
 export function AffiliateCard({ p, from, compact = false }: { p: AffiliateCardData; from: string; compact?: boolean }) {
@@ -169,8 +195,10 @@ export function AffiliateCard({ p, from, compact = false }: { p: AffiliateCardDa
       className={`card group flex ${compact ? "items-center gap-3 p-3" : "flex-col p-4"} no-underline transition hover:border-pink`}
     >
       <div className={`${compact ? "h-14 w-14 shrink-0" : "mb-3 aspect-square w-full"} overflow-hidden rounded-lg bg-white/5`}>
-        {p.imageUrl && (
+        {p.imageUrl ? (
           <img src={p.imageUrl} alt="" className="h-full w-full object-contain" />
+        ) : (
+          <GearArt name={p.name} category={p.category ?? "Accessories"} compact={compact} />
         )}
       </div>
       <div className="min-w-0 flex-1">
