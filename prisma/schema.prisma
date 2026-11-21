@@ -66,7 +66,66 @@ model Video {
   sponsorUrl        String?
   sponsorDisclosure String?
 
+  /// Set when the video was pulled in by the YouTube importer
+  importSourceId String?
+  importSource   YouTubeSource? @relation(fields: [importSourceId], references: [id], onDelete: SetNull)
+
   events VideoEvent[]
+
+  @@index([youtubeId])
+}
+
+// ─── Content importers ──────────────────────────────────────────────────────
+
+/// A YouTube channel whose new uploads are imported as videos (via its public feed).
+model YouTubeSource {
+  id            String    @id @default(cuid())
+  channelId     String    @unique
+  title         String
+  /// Comma-separated; a video is imported only if its title/description contains one. Empty = import all.
+  keywords      String    @default("")
+  /// Publish imported videos immediately instead of saving them as drafts
+  autoPublish   Boolean   @default(false)
+  categoryId    String?
+  active        Boolean   @default(true)
+  lastFetchedAt DateTime?
+  lastError     String?
+  createdAt     DateTime  @default(now())
+  videos        Video[]
+}
+
+/// An RSS/Atom feed whose items land in the admin news inbox as story ideas.
+model FeedSource {
+  id            String     @id @default(cuid())
+  name          String
+  url           String     @unique
+  siteUrl       String?
+  /// Comma-separated; only items mentioning one are kept. Empty = keep all.
+  keywords      String     @default("GTA, Grand Theft Auto, Rockstar")
+  active        Boolean    @default(true)
+  lastFetchedAt DateTime?
+  lastError     String?
+  createdAt     DateTime   @default(now())
+  items         FeedItem[]
+}
+
+model FeedItem {
+  id          String     @id @default(cuid())
+  sourceId    String
+  source      FeedSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  guid        String
+  title       String
+  link        String
+  /// Short plain-text summary for the editor's reference only (never published)
+  summary     String     @default("")
+  publishedAt DateTime?
+  /// new | drafted | dismissed
+  status      String     @default("new")
+  articleId   String?
+  createdAt   DateTime   @default(now())
+
+  @@unique([sourceId, guid])
+  @@index([status, publishedAt])
 }
 
 // ─── Advertising ────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useEffect, useRef } from "react";
 
-type State = { error?: string } | null;
+type State = { error?: string; notice?: string } | null;
 
 /** Wraps an admin form bound to a server action that returns { error } (or redirects on success). */
 export function FormShell({
@@ -37,6 +37,7 @@ export function FormShell({
     >
       {children}
       {state?.error && <p className="rounded-lg bg-bad/10 p-2 text-sm text-bad">{state.error}</p>}
+      {state?.notice && !state.error && <p className="rounded-lg bg-ok/10 p-2 text-sm text-ok">{state.notice}</p>}
       <button className="btn" disabled={pending}>
         {pending ? "Saving…" : submitLabel}
       </button>

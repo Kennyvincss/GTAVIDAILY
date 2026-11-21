@@ -12,7 +12,12 @@ export default async function VideosAdmin() {
   });
   return (
     <div>
-      <PageHeader title="Videos" sub="Embedded YouTube videos, featured and sponsored." action={<Link href="/admin/videos/new" className="btn">Add video</Link>} />
+      <PageHeader title="Videos" sub="Embedded YouTube videos, featured and sponsored." action={
+          <div className="flex gap-2">
+            <Link href="/admin/youtube" className="btn btn-ghost">Import from YouTube</Link>
+            <Link href="/admin/videos/new" className="btn">Add video</Link>
+          </div>
+        } />
       {videos.length === 0 ? (
         <Empty>No videos yet.</Empty>
       ) : (

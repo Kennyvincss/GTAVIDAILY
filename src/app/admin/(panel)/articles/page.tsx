@@ -17,7 +17,12 @@ export default async function ArticlesAdmin({ searchParams }: { searchParams: Pr
       <PageHeader
         title="Articles"
         sub="News, guides and sponsored articles."
-        action={<Link href="/admin/articles/new" className="btn">New article</Link>}
+        action={
+          <div className="flex gap-2">
+            <Link href="/admin/inbox" className="btn btn-ghost">News inbox</Link>
+            <Link href="/admin/articles/new" className="btn">New article</Link>
+          </div>
+        }
       />
       <div className="mb-4 flex gap-2 text-sm">
         <Link href="/admin/articles" className={`btn btn-sm ${filter ? "btn-ghost" : ""}`}>All</Link>

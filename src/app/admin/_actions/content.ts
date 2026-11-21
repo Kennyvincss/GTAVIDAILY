@@ -8,7 +8,7 @@ import { safeUrl, slugify } from "@/lib/format";
 import { parseYouTubeId } from "@/lib/youtube";
 import { bool, optDate, optStr, str } from "./form";
 
-export type FormState = { error?: string } | null;
+export type FormState = { error?: string; notice?: string } | null;
 
 function sponsorFields(form: FormData) {
   const isSponsored = bool(form, "isSponsored");

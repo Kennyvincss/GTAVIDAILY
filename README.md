@@ -43,6 +43,12 @@ The first-party tracker (`src/components/Tracker.tsx` → `POST /api/track`) rec
 
 Bots, signed-in admins and visitors sending Do Not Track or Global Privacy Control are not recorded. IP addresses are not stored. Every panel shows an empty state until real data exists.
 
+## Getting content in
+
+- **YouTube import** (`/admin/youtube`): connect a channel by pasting its URL (e.g. `https://www.youtube.com/@RockstarGames`). New uploads arrive as drafts for review, or are published straight away if auto-publish is on. A keyword filter can limit imports to GTA content on general gaming channels. It uses YouTube's public channel feeds, so no API key is needed. Embedding public videos is allowed by YouTube's terms.
+- **News inbox** (`/admin/inbox`): follow news sites by pasting a homepage or feed URL; the RSS/Atom feed is found automatically. Headlines matching your keywords become story ideas. **Write about this** creates an article draft with a source credit, which you write in your own words. Never republish the source's text.
+- **When sources are checked:** about hourly in the background while an admin has these pages open, on demand with **Check now**, and daily through the Vercel cron in `vercel.json`. The cron needs `CRON_SECRET` set on the project; Vercel then sends it automatically.
+
 ## Deploying to Vercel
 
 1. **Create a Postgres database.** Neon, Supabase and Vercel Postgres (Storage tab in your Vercel project) all work and have free tiers. Copy two connection strings:
@@ -59,6 +65,7 @@ Bots, signed-in admins and visitors sending Do Not Track or Global Privacy Contr
    | `ADMIN_SESSION_SECRET` | a long random string, e.g. the output of `openssl rand -hex 32` |
    | `NEXT_PUBLIC_SITE_URL` | your site URL, e.g. `https://gtavidaily.vercel.app` (update it if you add a domain) |
    | `NEXT_PUBLIC_ADSENSE_CLIENT` | leave empty until AdSense approves you |
+   | `CRON_SECRET` | any long random string; enables the daily content import |
 
 4. **Deploy.** Each build applies database migrations and makes sure the categories and ad placements exist. No sample content is created in production.
 5. **Go to `/admin`,** sign in, and publish your first article. Then set your creator promotion prices in **Creator promotion**.
