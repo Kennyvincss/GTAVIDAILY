@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { fetchText } from "./fetch";
 import { matchesKeywords, parseFeed } from "./parse";
+import { findOrCreateCreator } from "@/lib/clip-info";
 import { channelFeedUrl } from "./youtube";
 
 export type RunResult = { source: string; added: number; error?: string };
@@ -24,17 +25,28 @@ export async function runYouTubeSource(id: string): Promise<RunResult> {
     const existing = new Set(
       (
         await db.video.findMany({
-          where: { youtubeId: { in: candidates.map((c) => c.youtubeId!) } },
-          select: { youtubeId: true },
+          where: { platform: "youtube", externalId: { in: candidates.map((c) => c.youtubeId!) } },
+          select: { externalId: true },
         })
-      ).map((v) => v.youtubeId),
+      ).map((v) => v.externalId),
     );
     const fresh = candidates.filter((c) => !existing.has(c.youtubeId!));
+    // Credit the channel as the creator of everything imported from it.
+    const creator = fresh.length
+      ? await findOrCreateCreator({
+          name: feed.title || src.title,
+          url: `https://www.youtube.com/channel/${src.channelId}`,
+          platform: "youtube",
+        })
+      : null;
     for (const v of fresh) {
       await db.video.create({
         data: {
           title: v.title.slice(0, 200),
-          youtubeId: v.youtubeId!,
+          platform: "youtube",
+          externalId: v.youtubeId!,
+          sourceUrl: `https://www.youtube.com/watch?v=${v.youtubeId}`,
+          creatorId: creator?.id,
           description: v.summary.slice(0, 5000),
           status: src.autoPublish ? "published" : "draft",
           publishedAt: v.publishedAt ?? new Date(),

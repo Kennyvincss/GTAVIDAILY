@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { safeUrl, slugify } from "@/lib/format";
-import { parseYouTubeId } from "@/lib/youtube";
+import { parseClipUrl } from "@/lib/clips";
 import { bool, optDate, optStr, str } from "./form";
 
 export type FormState = { error?: string; notice?: string } | null;
@@ -73,11 +73,15 @@ export async function saveVideo(_prev: FormState, form: FormData): Promise<FormS
   try {
     const title = str(form, "title", 200);
     if (!title) throw new Error("Title is required.");
-    const youtubeId = parseYouTubeId(str(form, "youtube"));
-    if (!youtubeId) throw new Error("Enter a valid YouTube URL or video ID.");
+    const clip = parseClipUrl(str(form, "link", 1000));
+    if (!clip) throw new Error("Enter a YouTube, TikTok or Twitch clip link.");
+    if (!clip.externalId) throw new Error("Paste the full TikTok link (tiktok.com/@user/video/…), not a short link.");
     const data = {
       title,
-      youtubeId,
+      platform: clip.platform,
+      externalId: clip.externalId,
+      sourceUrl: clip.url,
+      creatorId: optStr(form, "creatorId"),
       description: str(form, "description", 5000),
       categoryId: optStr(form, "categoryId"),
       status: str(form, "status") === "draft" ? "draft" : "published",

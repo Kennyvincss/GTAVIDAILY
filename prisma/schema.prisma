@@ -52,7 +52,14 @@ model Article {
 model Video {
   id          String    @id @default(cuid())
   title       String
-  youtubeId   String
+  /// youtube | tiktok | twitch
+  platform    String    @default("youtube")
+  /// The platform's ID for the clip (YouTube video ID, TikTok video ID, Twitch clip slug)
+  externalId  String    @map("youtubeId")
+  /// The link the clip was added from
+  sourceUrl   String?
+  /// Thumbnail for platforms without a stable thumbnail URL pattern
+  thumbnailUrl String?
   description String    @default("")
   featured    Boolean   @default(false)
   status      String    @default("published") // draft | published
@@ -70,9 +77,14 @@ model Video {
   importSourceId String?
   importSource   YouTubeSource? @relation(fields: [importSourceId], references: [id], onDelete: SetNull)
 
+  /// The creator who made the clip (credited on the video page)
+  creatorId String?
+  creator   Creator? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+
   events VideoEvent[]
 
-  @@index([youtubeId])
+  @@index([platform, externalId])
+  @@index([creatorId])
 }
 
 // ─── Content importers ──────────────────────────────────────────────────────
@@ -191,6 +203,7 @@ model Creator {
   featuredUntil DateTime?
   createdAt     DateTime           @default(now())
   requests      PromotionRequest[]
+  videos        Video[]
 }
 
 /// Admin-managed price list for creator promotion.

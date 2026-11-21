@@ -79,6 +79,7 @@ export async function activateRequest(form: FormData) {
     });
   } else {
     let slug = slugify(req.creatorName) || "creator";
+  if (slug === "promote") slug = "promote-creator"; // /creators/promote is the request form
     if (await db.creator.findUnique({ where: { slug } })) slug = `${slug}-${Date.now().toString(36)}`;
     creator = await db.creator.create({
       data: {
@@ -156,6 +157,7 @@ export async function saveCreator(_prev: FormState, form: FormData): Promise<For
     await db.creator.update({ where: { id }, data });
   } else {
     let slug = slugify(name) || "creator";
+  if (slug === "promote") slug = "promote-creator"; // /creators/promote is the request form
     if (await db.creator.findUnique({ where: { slug } })) slug = `${slug}-${Date.now().toString(36)}`;
     await db.creator.create({ data: { ...data, slug } });
   }

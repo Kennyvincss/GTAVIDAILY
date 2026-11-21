@@ -63,7 +63,7 @@ export function getVideos(take = 8, opts: { featuredOnly?: boolean; categoryId?:
       ...(opts.categoryId ? { categoryId: opts.categoryId } : {}),
     },
     orderBy: [{ featured: "desc" }, { publishedAt: "desc" }],
-    include: { category: { select: { name: true, slug: true } } },
+    include: { category: { select: { name: true, slug: true } }, creator: { select: { name: true, slug: true } } },
     take,
   });
 }

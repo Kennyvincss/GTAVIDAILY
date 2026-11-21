@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/format";
-import { youtubeThumb } from "@/lib/youtube";
+import { clipThumbnail, platformLabel } from "@/lib/clips";
+import { ClipThumb } from "./ClipThumb";
 import { SponsoredBadge } from "./Sponsored";
 
 export type ArticleCardData = {
@@ -53,26 +54,35 @@ export function ArticleCard({ a, size = "md" }: { a: ArticleCardData; size?: "lg
 export type VideoCardData = {
   id: string;
   title: string;
-  youtubeId: string;
+  platform: string;
+  externalId: string;
+  thumbnailUrl: string | null;
   isSponsored: boolean;
   sponsorName: string | null;
   featured: boolean;
+  creator?: { name: string } | null;
 };
 
 export function VideoCard({ v }: { v: VideoCardData }) {
   return (
     <Link href={`/videos/${v.id}`} className="group block no-underline">
       <div className="relative aspect-video overflow-hidden rounded-xl bg-surface-2">
-        <img src={youtubeThumb(v.youtubeId)} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
+        <ClipThumb src={clipThumbnail(v)} platform={platformLabel(v.platform)} className="transition group-hover:scale-[1.03]" />
         <span className="absolute inset-0 grid place-items-center">
           <span className="grid h-12 w-12 place-items-center rounded-full bg-black/60 text-xl text-white">▶</span>
         </span>
+        {v.platform !== "youtube" && (
+          <span className="absolute left-2 top-2 rounded bg-black/70 px-1.5 py-0.5 text-[0.65rem] font-bold uppercase text-white">
+            {platformLabel(v.platform)}
+          </span>
+        )}
       </div>
       <div className="mt-2 flex flex-wrap gap-2">
         {v.featured && <span className="eyebrow text-aqua">Featured</span>}
         {v.isSponsored && <SponsoredBadge name={v.sponsorName} />}
       </div>
       <h3 className="mt-1 font-bold leading-snug group-hover:text-pink">{v.title}</h3>
+      {v.creator && <p className="mt-0.5 text-xs text-muted">by {v.creator.name}</p>}
     </Link>
   );
 }
@@ -94,14 +104,20 @@ const PLATFORM_LABEL: Record<string, string> = {
   other: "Creator",
 };
 
-export function CreatorCard({ c, promoted = true }: { c: CreatorCardData; promoted?: boolean }) {
-  return (
-    <a
-      href={c.channelUrl}
-      target="_blank"
-      rel={promoted ? "sponsored noopener" : "noopener"}
-      className="card flex items-center gap-3 p-3 no-underline transition hover:border-pink"
-    >
+export function CreatorCard({
+  c,
+  promoted = true,
+  href,
+  meta,
+}: {
+  c: CreatorCardData;
+  promoted?: boolean;
+  /** Link to an on-site page instead of the creator's channel */
+  href?: string;
+  meta?: string;
+}) {
+  const inner = (
+    <>
       {c.avatarUrl ? (
         <img src={c.avatarUrl} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" />
       ) : (
@@ -111,9 +127,25 @@ export function CreatorCard({ c, promoted = true }: { c: CreatorCardData; promot
       )}
       <span className="min-w-0">
         <span className="block truncate font-bold">{c.name}</span>
-        <span className="block text-xs text-muted">{PLATFORM_LABEL[c.platform] ?? "Creator"}</span>
+        <span className="block text-xs text-muted">
+          {PLATFORM_LABEL[c.platform] ?? "Creator"}
+          {meta ? ` · ${meta}` : ""}
+        </span>
         {c.bio && <span className="mt-0.5 line-clamp-2 block text-xs text-muted">{c.bio}</span>}
       </span>
+    </>
+  );
+  const cls = "card flex items-center gap-3 p-3 no-underline transition hover:border-pink";
+  if (href) {
+    return (
+      <Link href={href} className={cls}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <a href={c.channelUrl} target="_blank" rel={promoted ? "sponsored noopener" : "noopener"} className={cls}>
+      {inner}
     </a>
   );
 }

@@ -70,8 +70,8 @@ export default async function YouTubeImportPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {drafts.map((v) => (
               <div key={v.id} className="rounded-xl border border-line p-3">
-                <a href={`https://www.youtube.com/watch?v=${v.youtubeId}`} target="_blank" rel="noopener noreferrer">
-                  <img src={youtubeThumb(v.youtubeId)} alt="" className="aspect-video w-full rounded-lg object-cover" />
+                <a href={`https://www.youtube.com/watch?v=${v.externalId}`} target="_blank" rel="noopener noreferrer">
+                  <img src={youtubeThumb(v.externalId)} alt="" className="aspect-video w-full rounded-lg object-cover" />
                 </a>
                 <p className="mt-2 line-clamp-2 text-sm font-semibold">{v.title}</p>
                 <p className="text-xs text-muted">{v.importSource?.title} · {formatDate(v.publishedAt)}</p>
