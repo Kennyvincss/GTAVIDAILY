@@ -124,6 +124,16 @@ model XSource {
   active        Boolean   @default(true)
   /// Newest post already seen, so each check only pays for new posts
   lastSeenId    String?
+  /// Back-catalogue import ("all past GTA 6 videos"): none | running | done
+  backfillStatus  String  @default("none")
+  /// search (full-archive search) | timeline (scan recent posts)
+  backfillMode    String?
+  /// X pagination token to resume from
+  backfillCursor  String?
+  backfillScanned Int     @default(0)
+  backfillAdded   Int     @default(0)
+  /// Timeline mode only: stop after checking this many posts
+  backfillLimit   Int     @default(1000)
   lastFetchedAt DateTime?
   lastError     String?
   createdAt     DateTime  @default(now())

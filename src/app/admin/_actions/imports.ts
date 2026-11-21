@@ -9,7 +9,7 @@ import { fetchText } from "@/lib/importers/fetch";
 import { discoverFeedUrl, looksLikeFeed, parseFeed } from "@/lib/importers/parse";
 import { refreshStale, runFeedSource, runYouTubeSource } from "@/lib/importers/run";
 import { resolveChannelId } from "@/lib/importers/youtube";
-import { lookupXUser, parseXUsername, runXSource, xConfigured } from "@/lib/importers/x";
+import { backfillXSource, lookupXUser, parseXUsername, runXSource, xConfigured, type BackfillResult } from "@/lib/importers/x";
 import { findOrCreateCreator } from "@/lib/clip-info";
 import { bool, optStr, str } from "./form";
 import type { FormState } from "./content";
@@ -208,10 +208,22 @@ export async function addXSource(_prev: FormState, form: FormData): Promise<Form
       },
     });
     const r = await runXSource(src.id);
+    if (r.error) {
+      revalidatePath("/admin/auto-import");
+      return { error: r.error };
+    }
+    if (bool(form, "importPast")) {
+      await db.xSource.update({ where: { id: src.id }, data: { backfillStatus: "running", backfillLimit: depth(form) } });
+      const b = await backfillXSource(src.id);
+      revalidatePath("/admin/auto-import");
+      return backfillNotice(`Connected @${user.username}.`, b, r.added);
+    }
     revalidatePath("/admin/auto-import");
-    return r.error
-      ? { error: r.error }
-      : { notice: r.added ? `Connected @${user.username}: imported ${r.added} video post${r.added === 1 ? "" : "s"}.` : `Connected @${user.username}. No video posts to import right now; new ones will arrive automatically.` };
+    return {
+      notice: r.added
+        ? `Connected @${user.username}: imported ${r.added} recent video post${r.added === 1 ? "" : "s"}.`
+        : `Connected @${user.username}. No recent video posts; new ones will arrive automatically.`,
+    };
   } catch (e) {
     return { error: err(e) };
   }
@@ -241,4 +253,39 @@ export async function fetchXSource(form: FormData) {
   await requireAdmin();
   await runXSource(str(form, "id"));
   revalidatePath("/admin/auto-import");
+}
+
+
+const DEPTHS = [500, 1000, 3200];
+function depth(form: FormData): number {
+  const n = Number(str(form, "depth"));
+  return DEPTHS.includes(n) ? n : 1000;
+}
+
+function backfillNotice(prefix: string, b: BackfillResult, extra = 0): FormState {
+  const total = b.added + extra;
+  const found = `${total} GTA 6 video${total === 1 ? "" : "s"} imported`;
+  if (b.error && !b.added) return { error: `${prefix} Couldn't import past videos: ${b.error}` };
+  if (!b.done) {
+    return { notice: `${prefix} ${found} so far (checked ${b.scanned} posts). There's more — press “Continue importing” on the account below.${b.error ? ` (${b.error})` : ""}` };
+  }
+  return { notice: `${prefix} Done: ${found}${b.mode === "timeline" ? ` after checking ${b.scanned} posts` : ""}.` };
+}
+
+/** Import (or continue importing) an account's past GTA 6 videos. */
+export async function backfillX(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  try {
+    const id = str(form, "id");
+    const src = await db.xSource.findUnique({ where: { id } });
+    if (!src) return { error: "Account not found." };
+    if (form.has("depth")) await db.xSource.update({ where: { id }, data: { backfillLimit: depth(form) } });
+    if (src.backfillStatus === "none") await db.xSource.update({ where: { id }, data: { backfillStatus: "running" } });
+    const b = await backfillXSource(id);
+    revalidatePath("/admin/auto-import");
+    revalidatePath("/", "layout");
+    return backfillNotice(`@${src.username}:`, b);
+  } catch (e) {
+    return { error: err(e) };
+  }
 }

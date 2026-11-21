@@ -5,12 +5,13 @@ import { Check, Empty, Field, PageHeader, Pill, Section } from "@/components/adm
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { refreshStale } from "@/lib/importers/run";
-import { xConfigured } from "@/lib/importers/x";
+import { DEFAULT_GTA6_KEYWORDS, xConfigured } from "@/lib/importers/x";
 import { clipThumbnail } from "@/lib/clips";
 import { ClipThumb } from "@/components/ClipThumb";
 import {
   addXSource,
   addYouTubeSource,
+  backfillX,
   deleteXSource,
   deleteYouTubeSource,
   discardVideo,
@@ -26,6 +27,17 @@ function ago(d: Date | null) {
   const m = Math.round((Date.now() - d.getTime()) / 60_000);
   return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : formatDate(d);
 }
+
+// Importing an account's back catalogue runs in ~40s chunks inside this limit.
+export const maxDuration = 60;
+
+const DepthSelect = () => (
+  <select className="select" name="depth" defaultValue="1000">
+    <option value="500">last 500 posts (≈ $2.50 max)</option>
+    <option value="1000">last 1,000 posts (≈ $5 max)</option>
+    <option value="3200">last 3,200 posts, X&apos;s limit (≈ $16 max)</option>
+  </select>
+);
 
 export default async function AutoImportPage() {
   // Keep channels fresh in the background whenever an admin looks at this page.
@@ -140,7 +152,7 @@ export default async function AutoImportPage() {
 
       <Section
         title="X accounts"
-        sub="New posts with a video from these accounts are imported as clips. Uses X's official API, which is pay-per-use: each check only asks for posts newer than the last one seen, so you only pay for new posts."
+        sub="Paste an X profile link: its GTA 6 video posts are imported as clips (embedded from X, credited to the creator), and new ones keep arriving. Uses X's official pay-per-use API; regular checks only ask for posts newer than the last one seen."
       >
         {!xReady ? (
           <div className="space-y-3 text-sm">
@@ -159,12 +171,25 @@ export default async function AutoImportPage() {
         ) : (
           <FormShell action={addXSource} submitLabel="Connect X account" resetOnSuccess className="grid items-end gap-3 md:grid-cols-2">
             <Field label="X account" name="account" required placeholder="https://x.com/RockstarGames or @RockstarGames" className="md:col-span-2" />
-            <Field label="Only import posts mentioning (comma-separated, optional)" name="keywords" placeholder="GTA, GTA 6, GTA VI" hint="Recommended for accounts that also post about other things." />
+            <Field
+              label="Only import posts mentioning (comma-separated)"
+              name="keywords"
+              defaultValue={DEFAULT_GTA6_KEYWORDS}
+              hint="Keeps it to GTA 6 clips. Clear it only for accounts that post nothing but GTA 6."
+            />
             <div>
               <label className="label">Category for imported clips</label>
               <CategorySelect />
             </div>
-            <Check name="autoPublish" label="Publish new clips immediately (otherwise they wait above for your review)" />
+            <Check name="autoPublish" label="Publish clips immediately (otherwise they wait above for your review)" />
+            <div className="rounded-lg border border-line p-3 md:col-span-2">
+              <Check name="importPast" label="Also import all of their past GTA 6 videos" defaultChecked />
+              <p className="mt-1 text-xs text-muted">
+                Uses X&apos;s archive search when your API plan includes it — you then pay only for matching posts (about $0.005 each).
+                Otherwise it checks the account&apos;s recent posts, up to:
+              </p>
+              <div className="mt-2 max-w-sm"><DepthSelect /></div>
+            </div>
           </FormShell>
         )}
 
@@ -175,8 +200,20 @@ export default async function AutoImportPage() {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <a href={`https://x.com/${s.username}`} target="_blank" rel="noopener noreferrer" className="font-semibold">{s.name} <span className="text-muted">@{s.username}</span></a>
-                    <p className="text-xs text-muted">{s._count.videos} clips imported · checked {ago(s.lastFetchedAt)}</p>
+                    <p className="text-xs text-muted">
+                      {s._count.videos} clip{s._count.videos === 1 ? "" : "s"} imported · checked {ago(s.lastFetchedAt)}
+                    </p>
                     {s.lastError && <p className="mt-1 text-xs text-bad">Last check failed: {s.lastError}</p>}
+                    <p className="mt-1 text-xs text-muted">
+                      Past videos:{" "}
+                      {s.backfillStatus === "none"
+                        ? "not imported yet"
+                        : s.backfillStatus === "running"
+                          ? `import in progress (checked ${s.backfillScanned} posts so far) — press Continue`
+                          : s.backfillMode === "timeline"
+                            ? `all imported (checked their last ${s.backfillScanned} posts)`
+                            : "all imported (searched their full history)"}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Pill status={s.active ? "active" : "inactive"} />
@@ -185,6 +222,21 @@ export default async function AutoImportPage() {
                     )}
                   </div>
                 </div>
+                {xReady && (
+                  <FormShell
+                    action={backfillX}
+                    submitLabel={s.backfillStatus === "running" ? "Continue importing" : s.backfillStatus === "done" ? "Re-scan for past GTA 6 videos" : "Import all past GTA 6 videos"}
+                    className="mt-3 flex flex-wrap items-end gap-3 rounded-lg bg-surface-2 p-3"
+                  >
+                    <input type="hidden" name="id" value={s.id} />
+                    {s.backfillStatus !== "running" && (
+                      <div className="min-w-[16rem]">
+                        <label className="label">If archive search isn&apos;t available, check</label>
+                        <DepthSelect />
+                      </div>
+                    )}
+                  </FormShell>
+                )}
                 <form action={updateXSource} className="mt-3 grid items-end gap-3 md:grid-cols-[1.4fr_1fr_auto_auto_auto]">
                   <input type="hidden" name="id" value={s.id} />
                   <div>
