@@ -1,6 +1,7 @@
 import { parseYouTubeId } from "@/lib/youtube";
 
 export const PLATFORMS = {
+  x: "X",
   youtube: "YouTube",
   tiktok: "TikTok",
   twitch: "Twitch",
@@ -31,6 +32,21 @@ export function parseClipUrl(input: string): ParsedClip | null {
   const host = u.hostname.replace(/^(www|m|vm|vt)\./, "").toLowerCase();
   const path = u.pathname.replace(/\/+$/, "");
 
+  // X / Twitter posts, including common mirror domains people share
+  if (/^(x|twitter|mobile\.twitter|fxtwitter|vxtwitter|fixupx|fixvx|twittpr)\.com$/.test(host)) {
+    const m = path.match(/^\/(?:([\w]{1,15})|i(?:\/web)?)\/status(?:es)?\/(\d{5,25})/);
+    if (m) {
+      const user = m[1] && m[1] !== "i" ? m[1] : undefined;
+      return {
+        platform: "x",
+        externalId: m[2],
+        channel: user,
+        url: user ? `https://x.com/${user}/status/${m[2]}` : `https://x.com/i/status/${m[2]}`,
+      };
+    }
+    return null;
+  }
+
   if (host === "tiktok.com") {
     const m = path.match(/^\/@([\w.-]+)\/video\/(\d{8,25})/);
     if (m) return { platform: "tiktok", externalId: m[2], channel: m[1], url: `https://www.tiktok.com/@${m[1]}/video/${m[2]}` };
@@ -59,6 +75,7 @@ export function normaliseChannelUrl(url: string): string {
   try {
     const u = new URL(url.trim());
     const host = u.hostname.replace(/^(www|m)\./, "").toLowerCase();
+    if (host === "twitter.com" || host === "mobile.twitter.com") return `https://x.com${u.pathname.replace(/\/+$/, "")}`;
     return `https://${host === "youtube.com" || host === "tiktok.com" || host === "twitch.tv" ? `www.${host}` : host}${u.pathname.replace(/\/+$/, "")}`;
   } catch {
     return url.trim();
@@ -74,6 +91,7 @@ export function clipWatchUrl(v: { platform: string; externalId: string; sourceUr
   if (v.sourceUrl) return v.sourceUrl;
   if (v.platform === "youtube") return `https://www.youtube.com/watch?v=${v.externalId}`;
   if (v.platform === "twitch") return `https://clips.twitch.tv/${v.externalId}`;
+  if (v.platform === "x") return `https://x.com/i/status/${v.externalId}`;
   return `https://www.tiktok.com/embed/v2/${v.externalId}`;
 }
 

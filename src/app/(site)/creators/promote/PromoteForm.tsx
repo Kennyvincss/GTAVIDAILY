@@ -60,6 +60,7 @@ export function PromoteForm({ packages }: { packages: Pkg[] }) {
           <label className="label" htmlFor="platform">Platform</label>
           <select className="select" id="platform" name="platform" defaultValue="youtube">
             <option value="youtube">YouTube</option>
+            <option value="x">X (Twitter)</option>
             <option value="twitch">Twitch</option>
             <option value="tiktok">TikTok</option>
             <option value="kick">Kick</option>

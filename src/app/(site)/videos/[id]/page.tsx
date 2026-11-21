@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { TikTokEmbed, TwitchClipEmbed } from "@/components/ClipEmbeds";
+import { TikTokEmbed, TwitchClipEmbed, XPostEmbed } from "@/components/ClipEmbeds";
 import { VideoCard } from "@/components/Cards";
 import { Sidebar } from "@/components/Sidebar";
 import { SponsorDisclosure, SponsoredBadge } from "@/components/Sponsored";
@@ -43,7 +43,9 @@ export default async function VideoPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_300px]">
       <div className="min-w-0">
-        {v.platform === "tiktok" ? (
+        {v.platform === "x" ? (
+          <XPostEmbed id={v.externalId} url={clipWatchUrl(v)} title={v.title} />
+        ) : v.platform === "tiktok" ? (
           <TikTokEmbed id={v.externalId} title={v.title} />
         ) : v.platform === "twitch" ? (
           <TwitchClipEmbed slug={v.externalId} title={v.title} />

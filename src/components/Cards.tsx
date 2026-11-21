@@ -98,6 +98,7 @@ export type CreatorCardData = {
 
 const PLATFORM_LABEL: Record<string, string> = {
   youtube: "YouTube",
+  x: "X",
   twitch: "Twitch",
   tiktok: "TikTok",
   kick: "Kick",

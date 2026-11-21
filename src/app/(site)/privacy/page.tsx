@@ -28,6 +28,12 @@ export default function PrivacyPage() {
         Links on our Gear pages are affiliate links. If you buy through them we may earn a commission at no extra cost to you.
         We count clicks on these links.
       </p>
+      <h2>Embedded clips</h2>
+      <p>
+        Videos on this site are embedded from X, YouTube, TikTok and Twitch using their own players. When you view one,
+        that platform may set its own cookies under its privacy policy. Each clip is credited to its creator with a link
+        to their channel.
+      </p>
       <h2>Featured creators</h2>
       <p>Creators shown as “Featured” have paid for that placement.</p>
       <h2>Newsletter</h2>

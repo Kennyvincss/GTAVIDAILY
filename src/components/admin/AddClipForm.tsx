@@ -16,7 +16,7 @@ export function AddClipForm({ categories }: { categories: { id: string; name: st
           id="link"
           name="link"
           required
-          placeholder="Paste a YouTube, YouTube Shorts, TikTok or Twitch clip link"
+          placeholder="Paste a link to an X post with a video, or a YouTube, TikTok or Twitch clip"
         />
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">

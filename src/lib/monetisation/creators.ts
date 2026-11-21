@@ -11,7 +11,7 @@ export function getFeaturedCreators(limit = 6) {
   });
 }
 
-export const CREATOR_PLATFORMS = ["youtube", "twitch", "tiktok", "kick", "other"] as const;
+export const CREATOR_PLATFORMS = ["youtube", "x", "twitch", "tiktok", "kick", "other"] as const;
 
 export const REQUEST_STATUSES = ["pending", "approved", "active", "completed", "rejected"] as const;
 

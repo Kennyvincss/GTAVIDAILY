@@ -34,7 +34,12 @@ export async function addClip(_prev: FormState, form: FormData): Promise<FormSta
 
     const creator =
       creatorUrl && creatorName
-        ? await findOrCreateCreator({ name: creatorName, url: creatorUrl, platform: info.platform })
+        ? await findOrCreateCreator({
+            name: creatorName,
+            url: creatorUrl,
+            platform: info.platform,
+            avatarUrl: overrideUrl ? null : info.authorAvatar,
+          })
         : null;
 
     const customTitle = str(form, "title", 200);
