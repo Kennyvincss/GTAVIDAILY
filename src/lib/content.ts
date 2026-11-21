@@ -54,9 +54,14 @@ export async function getTrendingArticles(limit = 6) {
     .slice(0, limit);
 }
 
-export function getVideos(take = 8, opts: { featuredOnly?: boolean } = {}) {
+export function getVideos(take = 8, opts: { featuredOnly?: boolean; categoryId?: string } = {}) {
   return db.video.findMany({
-    where: { status: "published", publishedAt: { lte: new Date() }, ...(opts.featuredOnly ? { featured: true } : {}) },
+    where: {
+      status: "published",
+      publishedAt: { lte: new Date() },
+      ...(opts.featuredOnly ? { featured: true } : {}),
+      ...(opts.categoryId ? { categoryId: opts.categoryId } : {}),
+    },
     orderBy: [{ featured: "desc" }, { publishedAt: "desc" }],
     include: { category: { select: { name: true, slug: true } } },
     take,
