@@ -3,50 +3,42 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
-import { STARTER_ARTICLES, type StarterArticle } from "@/content/starter-articles";
+import { ALL_PACK_ARTICLES } from "@/content/articles";
+import { importPackArticles } from "@/lib/content-pack";
 
-async function importOne(a: StarterArticle): Promise<boolean> {
-  if (await db.article.findUnique({ where: { slug: a.slug } })) return false;
-  const category = await db.category.findUnique({ where: { slug: a.category } });
-  await db.article.create({
-    data: {
-      title: a.title,
-      slug: a.slug,
-      excerpt: a.excerpt,
-      body: a.body,
-      categoryId: category?.id ?? null,
-      status: "draft",
-    },
-  });
-  return true;
-}
-
-/** Import one ready-made article as a draft (never overwrites an existing article). */
-export async function importStarter(slug: string) {
-  await requireAdmin();
-  const a = STARTER_ARTICLES.find((x) => x.slug === slug);
-  if (a) await importOne(a);
-  revalidatePath("/admin/starter");
-}
-
+/** Add every researched article that hasn't been added yet (published). */
 export async function importAllStarters() {
   await requireAdmin();
-  for (const a of STARTER_ARTICLES) await importOne(a);
-  revalidatePath("/admin/starter");
+  await importPackArticles(db, { publish: true });
+  revalidatePath("/", "layout");
 }
 
-/**
- * Publish every imported ready-made article that is still a draft. Times are
- * staggered a minute apart in list order, so the first article (the launch
- * story) becomes the newest and leads the homepage.
- */
+/** Add one article, or bring back one that was deleted. */
+export async function importStarter(slug: string) {
+  await requireAdmin();
+  if (!ALL_PACK_ARTICLES.some((a) => a.slug === slug)) return;
+  await db.contentPackImport.deleteMany({ where: { slug } });
+  await importPackArticles(db, { publish: true, slugs: [slug] });
+  revalidatePath("/", "layout");
+}
+
+/** Publish every researched article that is still a draft, keeping batch order. */
 export async function publishAllStarters() {
   await requireAdmin();
+  const drafts = await db.article.findMany({
+    where: { slug: { in: ALL_PACK_ARTICLES.map((a) => a.slug) }, status: "draft" },
+    select: { id: true, slug: true },
+  });
+  const rank = new Map(
+    [...ALL_PACK_ARTICLES]
+      .sort((x, y) => y.batchIndex - x.batchIndex || x.index - y.index)
+      .map((a, i) => [a.slug, i]),
+  );
   const now = Date.now();
-  for (const [i, a] of STARTER_ARTICLES.entries()) {
-    await db.article.updateMany({
-      where: { slug: a.slug, status: "draft" },
-      data: { status: "published", publishedAt: new Date(now - i * 60_000) },
+  for (const d of drafts) {
+    await db.article.update({
+      where: { id: d.id },
+      data: { status: "published", publishedAt: new Date(now - (rank.get(d.slug) ?? 0) * 60_000) },
     });
   }
   revalidatePath("/", "layout");

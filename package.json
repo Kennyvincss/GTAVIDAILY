@@ -5,13 +5,15 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma generate && prisma migrate deploy && tsx prisma/seed.ts --structure-only && next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && tsx prisma/seed.ts --structure-only && tsx prisma/import-articles.ts && next build",
     "start": "next start",
     "lint": "tsc --noEmit",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "content:import": "tsx prisma/import-articles.ts",
+    "content:check": "tsx scripts/check-articles.ts"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
