@@ -4,6 +4,15 @@
 export const ADMIN_COOKIE = "gvd_admin";
 const SESSION_TTL_SECONDS = 60 * 60 * 12; // 12 hours
 
+/** Returns a human-readable problem with the admin configuration, or null when it is usable. */
+export function adminConfigProblem(): string | null {
+  if (!process.env.ADMIN_PASSWORD) return "ADMIN_PASSWORD is not set.";
+  const s = process.env.ADMIN_SESSION_SECRET;
+  if (!s) return "ADMIN_SESSION_SECRET is not set.";
+  if (s.length < 16) return `ADMIN_SESSION_SECRET is too short (${s.length} characters; use at least 16).`;
+  return null;
+}
+
 function secret(): string {
   const s = process.env.ADMIN_SESSION_SECRET;
   if (!s || s.length < 16) {

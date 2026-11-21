@@ -6,6 +6,7 @@ import { existingVisitorId, shouldRecord } from "@/lib/analytics/record";
 import { VISITOR_COOKIE, VISITOR_MAX_AGE } from "@/lib/analytics/visitor";
 
 // Only public site routes are recorded.
+// /api/health and other API routes are never tracked.
 const TRACKABLE = /^\/($|news(\/|$)|category\/|videos(\/|$)|creators(\/|$)|gear$|newsletter$|advertise$|privacy$)/;
 
 export async function POST(req: NextRequest) {

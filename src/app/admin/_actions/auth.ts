@@ -2,13 +2,12 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ADMIN_COOKIE, checkPassword, createSessionToken } from "@/lib/auth";
+import { ADMIN_COOKIE, adminConfigProblem, checkPassword, createSessionToken } from "@/lib/auth";
 
 export async function login(_prev: string | null, form: FormData): Promise<string | null> {
   const password = form.get("password");
-  if (!process.env.ADMIN_PASSWORD || !process.env.ADMIN_SESSION_SECRET) {
-    return "Admin is not configured. Set ADMIN_PASSWORD and ADMIN_SESSION_SECRET.";
-  }
+  const problem = adminConfigProblem();
+  if (problem) return `Admin is not configured: ${problem} Update it in your hosting environment variables and redeploy.`;
   if (typeof password !== "string" || !(await checkPassword(password))) {
     await new Promise((r) => setTimeout(r, 600)); // slow down guessing
     return "Incorrect password.";
