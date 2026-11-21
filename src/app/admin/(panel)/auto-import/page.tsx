@@ -68,7 +68,12 @@ export default async function AutoImportPage() {
       <PageHeader
         title="Auto-import"
         sub="Connect YouTube channels and X accounts: their new videos arrive here for review (or go live automatically), credited to the creator."
-        action={<Link href="/admin/videos" className="btn btn-ghost btn-sm">All videos</Link>}
+        action={
+          <div className="flex gap-2">
+            <Link href="/admin/channels" className="btn btn-sm">My channels &amp; their videos</Link>
+            <Link href="/admin/videos" className="btn btn-ghost btn-sm">All videos</Link>
+          </div>
+        }
       />
 
       <Section title="YouTube: connect a channel" sub="Paste the channel's URL, e.g. https://www.youtube.com/@RockstarGames. Channels are checked about once an hour while you use the admin, and daily via the scheduled job.">

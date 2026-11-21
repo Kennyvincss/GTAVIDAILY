@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/inbox", label: "News inbox" },
   { href: "/admin/articles", label: "Articles" },
   { href: "/admin/videos", label: "Videos" },
+  { href: "/admin/channels", label: "My channels" },
   { href: "/admin/auto-import", label: "Auto-import (YouTube & X)" },
   { href: "/admin/categories", label: "Categories" },
   { group: "Monetisation" },

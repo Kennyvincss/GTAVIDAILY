@@ -289,3 +289,35 @@ export async function backfillX(_prev: FormState, form: FormData): Promise<FormS
     return { error: err(e) };
   }
 }
+
+// ── Managing imported videos (My channels page) ────────────────────────────
+
+export async function setVideoStatus(status: "published" | "draft", form: FormData) {
+  await requireAdmin();
+  // Videos keep their original posting date, so clips stay in the order they were made.
+  await db.video.update({ where: { id: str(form, "id") }, data: { status } });
+  revalidatePath("/", "layout");
+}
+
+export async function deleteVideoFromChannel(form: FormData) {
+  await requireAdmin();
+  await db.video.delete({ where: { id: str(form, "id") } });
+  revalidatePath("/", "layout");
+}
+
+/** Publish every draft imported from one source ("yt:<id>", "x:<id>" or "links"). */
+export async function publishAllFromSource(source: string) {
+  await requireAdmin();
+  const where = sourceWhere(source);
+  if (!where) return;
+  await db.video.updateMany({ where: { ...where, status: "draft" }, data: { status: "published" } });
+  revalidatePath("/", "layout");
+}
+
+function sourceWhere(source: string) {
+  const [kind, id] = source.split(":");
+  if (kind === "yt" && id) return { importSourceId: id };
+  if (kind === "x" && id) return { xSourceId: id };
+  if (kind === "links") return { importSourceId: null, xSourceId: null };
+  return null;
+}
